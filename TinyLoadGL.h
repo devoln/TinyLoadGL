@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 
 typedef struct __GLsync* GLsync;
 typedef unsigned char GLboolean;
@@ -20,8 +21,8 @@ template<typename F> using GlFunc = F;
 namespace z_D { extern "C" {
 #ifdef _WIN32
 __declspec(dllimport) GlFunc<intptr_t()>* TINY_LOAD_GL_CALL wglGetProcAddress(const char* name);
-#elif defined(__ANDROID__)
-void* dlopen(const char* filename, int flag);
+#elif defined(__ANDROID) || defined(__APPLE__)
+void* dlopen(const char* path, int mode);
 void* dlsym(void* handle, const char* symbol);
 #else
 GlFunc<void()>* eglGetProcAddress(const char* procname);
@@ -37,11 +38,17 @@ inline GlFunc<void()>* GetProcAddress(const char* name)
 	return res;
 #elif defined(__ANDROID__)
 	static const auto libgl = [] {
-        auto res = z_D::dlopen("libGLESv3.so", RTLD_LAZY|RTLD_GLOBAL);
-        if(!res) res = z_D::dlopen("libGLESv2.so", RTLD_LAZY|RTLD_GLOBAL);
+        auto res = z_D::dlopen("libGLESv3.so", 0x101);
+        if(!res) res = z_D::dlopen("libGLESv2.so", 0x101);
         return res;
     }();
     return z_D::dlsym(libgl, name);
+#elif defined(__APPLE__)
+	char symbolName[256];
+	strncpy(symbolName + 1, name, sizeof(symbolName) - 1);
+	symbolName[0] = '_';
+	static void* image = z_D::dlopen("/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL", 1);
+	return reinterpret_cast<GlFunc<void()>*>(image? z_D::dlsym(image, name): nullptr);
 #else
 	return reinterpret_cast<GlFunc<void()>*>(z_D::eglGetProcAddress(name));
 #endif
@@ -57,6 +64,8 @@ namespace z_D {
 
 struct Gl11E
 {
+	static constexpr GLenum (NO_ERROR) = 0;
+
 	enum: GLenum {
 		DEPTH_BUFFER_BIT = 0x00000100,
 		STENCIL_BUFFER_BIT = 0x00000400,
@@ -95,8 +104,7 @@ struct Gl11E
 		SCISSOR_TEST = 0x0C11,
 		STENCIL_TEST = 0x0B90,
 		POLYGON_OFFSET_FILL = 0x8037,
-		
-		NO_ERROR = 0,
+
 		INVALID_ENUM = 0x0500,
 		INVALID_VALUE,
 		INVALID_OPERATION,
@@ -372,6 +380,8 @@ struct Gles2E
 
 struct Gles3E
 {
+	static constexpr GLenum (WAIT_FAILED) = 0x911D;
+
 	enum: GLenum {
 		READ_BUFFER = 0x0C02,
 		UNPACK_ROW_LENGTH = 0x0CF2,
@@ -630,7 +640,6 @@ struct Gles3E
 		ALREADY_SIGNALED,
 		TIMEOUT_EXPIRED,
 		CONDITION_SATISFIED,
-		WAIT_FAILED,
 
 		SYNC_FLUSH_COMMANDS_BIT = 0x00000001,
 		VERTEX_ATTRIB_ARRAY_DIVISOR = 0x88FE,
@@ -875,6 +884,7 @@ struct Gles31E
 
 struct Gles32E
 {
+	static constexpr GLenum (DIFFERENCE) = 0x929E;
 	enum: GLenum {
 		MULTISAMPLE_LINE_WIDTH_RANGE = 0x9381,
 		MULTISAMPLE_LINE_WIDTH_GRANULARITY,
@@ -888,7 +898,6 @@ struct Gles32E
 		COLORBURN,
 		HARDLIGHT,
 		SOFTLIGHT,
-		DIFFERENCE = 0x929E,
 		EXCLUSION = 0x92A0,
 		HSL_HUE = 0x92AD,
 		HSL_SATURATION,
@@ -1259,45 +1268,14 @@ struct GlesExtE
 	GL_FUNC(VertexAttrib4f, void, (uint32_t index, float x, float y, float z, float w)) \
 	GL_FUNC(VertexAttrib4fv, void, (uint32_t index, const float* v))
 
-#define GLES3_OR_EXTENSION_FUNCTIONS \
+#define GLES3_NEW_FUNCTIONS \
 	GL_FUNC(ReadBuffer, void, (GLenum src)) \
-	GL_FUNC(DrawBuffers, void, (int32_t n, const GLenum *bufs)) \
+	GL_FUNC(DrawRangeElements, void, (GLenum mode, uint32_t start, uint32_t end, int32_t count, GLenum type, const void* indices)) \
 	GL_FUNC(TexImage3D, void, (GLenum target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t depth, int32_t border, GLenum format, GLenum type, const void* pixels)) \
 	GL_FUNC(TexSubImage3D, void, (GLenum target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t zoffset, int32_t width, int32_t height, int32_t depth, GLenum format, GLenum type, const void* pixels)) \
 	GL_FUNC(CopyTexSubImage3D, void, (GLenum target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t zoffset, int32_t x, int32_t y, int32_t width, int32_t height)) \
 	GL_FUNC(CompressedTexImage3D, void, (GLenum target, int32_t level, GLenum internalformat, int32_t width, int32_t height, int32_t depth, int32_t border, int32_t imageSize, const void* data)) \
 	GL_FUNC(CompressedTexSubImage3D, void, (GLenum target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t zoffset, int32_t width, int32_t height, int32_t depth, GLenum format, int32_t imageSize, const void* data)) \
-	GL_FUNC(MapBufferRange, void, (GLenum target, intptr_t offset, intptr_t length, uint32_t access)) \
-	GL_FUNC(UnmapBuffer, GLboolean, (GLenum target)) \
-	GL_FUNC(FlushMappedBufferRange, void, (GLenum target, intptr_t offset, intptr_t length)) \
-	GL_FUNC(BindVertexArray, void, (uint32_t array)) \
-	GL_FUNC(DeleteVertexArrays, void, (int32_t n, const uint32_t* arrays)) \
-	GL_FUNC(GenVertexArrays, void, (int32_t n, uint32_t* arrays)) \
-	GL_FUNC(IsVertexArray, GLboolean, (uint32_t array)) \
-	GL_FUNC(CopyBufferSubData, void, (GLenum readTarget, GLenum writeTarget, intptr_t readOffset, intptr_t writeOffset, intptr_t size)) \
-	GL_FUNC(GetProgramBinary, void, (uint32_t program, int32_t bufSize, int32_t* length, GLenum* binaryFormat, void* binary)) \
-	GL_FUNC(ProgramBinary, void, (uint32_t program, GLenum binaryFormat, const void* binary, int32_t length)) \
-	GL_FUNC(ProgramParameteri, void, (uint32_t program, GLenum pname, int32_t value)) \
-	GL_FUNC(TexStorage2D, void, (GLenum target, int32_t levels, GLenum internalformat, int32_t width, int32_t height)) \
-	GL_FUNC(TexStorage3D, void, (GLenum target, int32_t levels, GLenum internalformat, int32_t width, int32_t height, int32_t depth)) \
-	GL_FUNC(RenderbufferStorageMultisample, void, (GLenum target, int32_t samples, GLenum internalformat, int32_t width, int32_t height)) \
-	GL_FUNC(DrawArraysInstanced, void, (GLenum mode, int32_t first, int32_t count, int32_t instancecount)) \
-	GL_FUNC(DrawElementsInstanced, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t instancecount)) \
-	GL_FUNC(VertexAttribDivisor, void, (uint32_t index, uint32_t divisor)) \
-
-
-#define GLES3_ONLY_FUNCTIONS \
-	GL_FUNC(DrawRangeElements, void, (GLenum mode, uint32_t start, uint32_t end, int32_t count, GLenum type, const void* indices)) \
-	GL_FUNC(GenSamplers, void, (int32_t count, uint32_t* samplers)) \
-	GL_FUNC(DeleteSamplers, void, (int32_t count, const uint32_t* samplers)) \
-	GL_FUNC(IsSampler, GLboolean, (uint32_t sampler)) \
-	GL_FUNC(BindSampler, void, (uint32_t unit, uint32_t sampler)) \
-	GL_FUNC(SamplerParameteri, void, (uint32_t sampler, GLenum pname, int32_t param)) \
-	GL_FUNC(SamplerParameteriv, void, (uint32_t sampler, GLenum pname, const int32_t* param)) \
-	GL_FUNC(SamplerParameterf, void, (uint32_t sampler, GLenum pname, float param)) \
-	GL_FUNC(SamplerParameterfv, void, (uint32_t sampler, GLenum pname, const float* param)) \
-	GL_FUNC(GetSamplerParameteriv, void, (uint32_t sampler, GLenum pname, int32_t* params)) \
-	GL_FUNC(GetSamplerParameterfv, void, (uint32_t sampler, GLenum pname, float* params)) \
 	GL_FUNC(GenQueries, void, (int32_t n, uint32_t* ids)) \
 	GL_FUNC(DeleteQueries, void, (int32_t n, const uint32_t* ids)) \
 	GL_FUNC(IsQuery, GLboolean, (uint32_t id)) \
@@ -1305,7 +1283,9 @@ struct GlesExtE
 	GL_FUNC(EndQuery, void, (GLenum target)) \
 	GL_FUNC(GetQueryiv, void, (GLenum target, GLenum pname, int32_t* params)) \
 	GL_FUNC(GetQueryObjectuiv, void, (uint32_t id, GLenum pname, uint32_t* params)) \
+	GL_FUNC(UnmapBuffer, GLboolean, (GLenum target)) \
 	GL_FUNC(GetBufferPointerv, void, (GLenum target, GLenum pname, void** params)) \
+	GL_FUNC(DrawBuffers, void, (int32_t n, const GLenum *bufs)) \
 	GL_FUNC(UniformMatrix2x3fv, void, (int32_t location, int32_t count, GLboolean transpose, const float* value)) \
 	GL_FUNC(UniformMatrix3x2fv, void, (int32_t location, int32_t count, GLboolean transpose, const float* value)) \
 	GL_FUNC(UniformMatrix2x4fv, void, (int32_t location, int32_t count, GLboolean transpose, const float* value)) \
@@ -1313,7 +1293,14 @@ struct GlesExtE
 	GL_FUNC(UniformMatrix3x4fv, void, (int32_t location, int32_t count, GLboolean transpose, const float* value)) \
 	GL_FUNC(UniformMatrix4x3fv, void, (int32_t location, int32_t count, GLboolean transpose, const float* value)) \
 	GL_FUNC(BlitFramebuffer, void, (int32_t srcX0, int32_t srcY0, int32_t srcX1, int32_t srcY1, int32_t dstX0, int32_t dstY0, int32_t dstX1, int32_t dstY1, uint32_t mask, GLenum filter)) \
+	GL_FUNC(RenderbufferStorageMultisample, void, (GLenum target, int32_t samples, GLenum internalformat, int32_t width, int32_t height)) \
 	GL_FUNC(FramebufferTextureLayer, void, (GLenum target, GLenum attachment, uint32_t texture, int32_t level, int32_t layer)) \
+	GL_FUNC(MapBufferRange, void, (GLenum target, intptr_t offset, intptr_t length, uint32_t access)) \
+	GL_FUNC(FlushMappedBufferRange, void, (GLenum target, intptr_t offset, intptr_t length)) \
+	GL_FUNC(BindVertexArray, void, (uint32_t array)) \
+	GL_FUNC(DeleteVertexArrays, void, (int32_t n, const uint32_t* arrays)) \
+	GL_FUNC(GenVertexArrays, void, (int32_t n, uint32_t* arrays)) \
+	GL_FUNC(IsVertexArray, GLboolean, (uint32_t array)) \
 	GL_FUNC(GetIntegeri_v, void, (GLenum target, uint32_t index, int32_t* data)) \
 	GL_FUNC(BeginTransformFeedback, void, (GLenum primitiveMode)) \
 	GL_FUNC(EndTransformFeedback, void, ()) \
@@ -1343,12 +1330,15 @@ struct GlesExtE
 	GL_FUNC(ClearBufferfv, void, (GLenum buffer, int32_t drawbuffer, const float* value)) \
 	GL_FUNC(ClearBufferfi, void, (GLenum buffer, int32_t drawbuffer, float depth, int32_t stencil)) \
 	GL_FUNC(GetStringi, const uint8_t*, (GLenum name, uint32_t index)) \
+	GL_FUNC(CopyBufferSubData, void, (GLenum readTarget, GLenum writeTarget, intptr_t readOffset, intptr_t writeOffset, intptr_t size)) \
 	GL_FUNC(GetUniformIndices, void, (uint32_t program, int32_t uniformCount, const char* const* uniformNames, uint32_t* uniformIndices)) \
 	GL_FUNC(GetActiveUniformsiv, void, (uint32_t program, int32_t uniformCount, const uint32_t *uniformIndices, GLenum pname, int32_t* params)) \
 	GL_FUNC(GetUniformBlockIndex, uint32_t, (uint32_t program, const char* uniformBlockName)) \
 	GL_FUNC(GetActiveUniformBlockiv, void, (uint32_t program, uint32_t uniformBlockIndex, GLenum pname, int32_t* params)) \
 	GL_FUNC(GetActiveUniformBlockName, void, (uint32_t program, uint32_t uniformBlockIndex, int32_t bufSize, int32_t* length, char* uniformBlockName)) \
 	GL_FUNC(UniformBlockBinding, void, (uint32_t program, uint32_t uniformBlockIndex, uint32_t uniformBlockBinding)) \
+	GL_FUNC(DrawArraysInstanced, void, (GLenum mode, int32_t first, int32_t count, int32_t instancecount)) \
+	GL_FUNC(DrawElementsInstanced, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t instancecount)) \
 	GL_FUNC(FenceSync, GLsync, (GLenum condition, uint32_t flags)) \
 	GL_FUNC(IsSync, GLboolean, (GLsync sync)) \
 	GL_FUNC(DeleteSync, void, (GLsync sync)) \
@@ -1358,20 +1348,31 @@ struct GlesExtE
 	GL_FUNC(GetSynciv, void, (GLsync sync, GLenum pname, int32_t count, int32_t* length, int32_t* values)) \
 	GL_FUNC(GetInteger64i_v, void, (GLenum target, uint32_t index, int64_t* data)) \
 	GL_FUNC(GetBufferParameteri64v, void, (GLenum target, GLenum pname, int64_t* params)) \
+	GL_FUNC(GenSamplers, void, (int32_t count, uint32_t* samplers)) \
+	GL_FUNC(DeleteSamplers, void, (int32_t count, const uint32_t* samplers)) \
+	GL_FUNC(IsSampler, GLboolean, (uint32_t sampler)) \
+	GL_FUNC(BindSampler, void, (uint32_t unit, uint32_t sampler)) \
+	GL_FUNC(SamplerParameteri, void, (uint32_t sampler, GLenum pname, int32_t param)) \
+	GL_FUNC(SamplerParameteriv, void, (uint32_t sampler, GLenum pname, const int32_t* param)) \
+	GL_FUNC(SamplerParameterf, void, (uint32_t sampler, GLenum pname, float param)) \
+	GL_FUNC(SamplerParameterfv, void, (uint32_t sampler, GLenum pname, const float* param)) \
+	GL_FUNC(GetSamplerParameteriv, void, (uint32_t sampler, GLenum pname, int32_t* params)) \
+	GL_FUNC(GetSamplerParameterfv, void, (uint32_t sampler, GLenum pname, float* params)) \
+	GL_FUNC(VertexAttribDivisor, void, (uint32_t index, uint32_t divisor)) \
 	GL_FUNC(BindTransformFeedback, void, (GLenum target, uint32_t id)) \
 	GL_FUNC(DeleteTransformFeedbacks, void, (int32_t n, const uint32_t* ids)) \
 	GL_FUNC(GenTransformFeedbacks, void, (int32_t n, uint32_t* ids)) \
 	GL_FUNC(IsTransformFeedback, GLboolean, (uint32_t id)) \
 	GL_FUNC(PauseTransformFeedback, void, ()) \
 	GL_FUNC(ResumeTransformFeedback, void, ()) \
+	GL_FUNC(GetProgramBinary, void, (uint32_t program, int32_t bufSize, int32_t* length, GLenum* binaryFormat, void* binary)) \
+	GL_FUNC(ProgramBinary, void, (uint32_t program, GLenum binaryFormat, const void* binary, int32_t length)) \
+	GL_FUNC(ProgramParameteri, void, (uint32_t program, GLenum pname, int32_t value)) \
 	GL_FUNC(InvalidateFramebuffer, void, (GLenum target, int32_t numAttachments, const GLenum* attachments)) \
 	GL_FUNC(InvalidateSubFramebuffer, void, (GLenum target, int32_t numAttachments, const GLenum* attachments, int32_t x, int32_t y, int32_t width, int32_t height)) \
+	GL_FUNC(TexStorage2D, void, (GLenum target, int32_t levels, GLenum internalformat, int32_t width, int32_t height)) \
+	GL_FUNC(TexStorage3D, void, (GLenum target, int32_t levels, GLenum internalformat, int32_t width, int32_t height, int32_t depth)) \
 	GL_FUNC(GetInternalformativ, void, (GLenum target, GLenum internalformat, GLenum pname, int32_t count, int32_t* params))
-
-
-#define GLES3_NEW_FUNCTIONS \
-	GLES3_OR_EXTENSION_FUNCTIONS \
-	GLES3_ONLY_FUNCTIONS
 
 #define GLES31_NEW_FUNCTIONS \
 	GL_FUNC(DispatchCompute, void, (uint32_t num_groups_x, uint32_t num_groups_y, uint32_t num_groups_z)) \
@@ -1443,7 +1444,9 @@ struct GlesExtE
 	GL_FUNC(VertexAttribBinding, void, (uint32_t attribindex, uint32_t bindingindex)) \
 	GL_FUNC(VertexBindingDivisor, void, (uint32_t bindingindex, uint32_t divisor))
 
-#define GLES32_OR_EXTENSION_FUNCTIONS \
+#define GLES32_NEW_FUNCTIONS \
+	GL_FUNC(BlendBarrier, void, ()) \
+	GL_FUNC(CopyImageSubData, void, (uint32_t srcName, GLenum srcTarget, int32_t srcLevel, int32_t srcX, int32_t srcY, int32_t srcZ, uint32_t dstName, GLenum dstTarget, int32_t dstLevel, int32_t dstX, int32_t dstY, int32_t dstZ, int32_t srcWidth, int32_t srcHeight, int32_t srcDepth)) \
 	GL_FUNC(DebugMessageControl, void, (GLenum source, GLenum type, GLenum severity, int32_t count, const uint32_t* ids, GLboolean enabled)) \
 	GL_FUNC(DebugMessageInsert, void, (GLenum source, GLenum type, uint32_t id, GLenum severity, int32_t length, const char* buf)) \
 	GL_FUNC(DebugMessageCallback, void, (Gles32E::GLDEBUGPROC callback, const void* userParam)) \
@@ -1455,26 +1458,6 @@ struct GlesExtE
 	GL_FUNC(ObjectPtrLabel, void, (const void* ptr, int32_t length, const char* label)) \
 	GL_FUNC(GetObjectPtrLabel, void, (const void* ptr, int32_t bufSize, int32_t* length, char* label)) \
 	GL_FUNC(GetPointerv, void, (GLenum pname, void** params)) \
-	GL_FUNC(ReadnPixels, void, (int32_t x, int32_t y, int32_t width, int32_t height, GLenum format, GLenum type, int32_t bufSize, void* data)) \
-	GL_FUNC(GetnUniformfv, void, (uint32_t program, int32_t location, int32_t bufSize, float* params)) \
-	GL_FUNC(GetnUniformiv, void, (uint32_t program, int32_t location, int32_t bufSize, int32_t* params)) \
-	GL_FUNC(GetnUniformuiv, void, (uint32_t program, int32_t location, int32_t bufSize, uint32_t* params)) \
-	GL_FUNC(GetGraphicsResetStatus, GLenum, ()) \
-	GL_FUNC(CopyImageSubData, void, (uint32_t srcName, GLenum srcTarget, int32_t srcLevel, int32_t srcX, int32_t srcY, int32_t srcZ, uint32_t dstName, GLenum dstTarget, int32_t dstLevel, int32_t dstX, int32_t dstY, int32_t dstZ, int32_t srcWidth, int32_t srcHeight, int32_t srcDepth)) \
-	GL_FUNC(DrawElementsBaseVertex, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t basevertex)) \
-	GL_FUNC(DrawRangeElementsBaseVertex, void, (GLenum mode, uint32_t start, uint32_t end, int32_t count, GLenum type, const void* indices, int32_t basevertex)) \
-	GL_FUNC(DrawElementsInstancedBaseVertex, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t instancecount, int32_t basevertex)) \
-	GL_FUNC(TexBuffer, void, (GLenum target, GLenum internalformat, uint32_t buffer)) \
-	GL_FUNC(TexBufferRange, void, (GLenum target, GLenum internalformat, uint32_t buffer, intptr_t offset, intptr_t size)) \
-	GL_FUNC(PatchParameteri, void, (GLenum pname, int32_t value)) \
-	GL_FUNC(MinSampleShading, void, (float value)) \
-	GL_FUNC(TexStorage3DMultisample, void, (GLenum target, int32_t samples, GLenum internalformat, int32_t width, int32_t height, int32_t depth, GLboolean fixedsamplelocations)) \
-	GL_FUNC(PrimitiveBoundingBox, void, (float minX, float minY, float minZ, float minW, float maxX, float maxY, float maxZ, float maxW)) \
-	GL_FUNC(FramebufferTexture, void, (GLenum target, GLenum attachment, uint32_t texture, int32_t level))
-
-
-#define GLES32_ONLY_FUNCTIONS \
-	GL_FUNC(BlendBarrier, void, ()) \
 	GL_FUNC(Enablei, void, (GLenum target, uint32_t index)) \
 	GL_FUNC(Disablei, void, (GLenum target, uint32_t index)) \
 	GL_FUNC(BlendEquationi, void, (uint32_t buf, GLenum mode)) \
@@ -1483,6 +1466,18 @@ struct GlesExtE
 	GL_FUNC(BlendFuncSeparatei, void, (uint32_t buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)) \
 	GL_FUNC(ColorMaski, void, (uint32_t index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)) \
 	GL_FUNC(IsEnabledi, GLboolean, (GLenum target, uint32_t index)) \
+	GL_FUNC(DrawElementsBaseVertex, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t basevertex)) \
+	GL_FUNC(DrawRangeElementsBaseVertex, void, (GLenum mode, uint32_t start, uint32_t end, int32_t count, GLenum type, const void* indices, int32_t basevertex)) \
+	GL_FUNC(DrawElementsInstancedBaseVertex, void, (GLenum mode, int32_t count, GLenum type, const void* indices, int32_t instancecount, int32_t basevertex)) \
+	GL_FUNC(FramebufferTexture, void, (GLenum target, GLenum attachment, uint32_t texture, int32_t level)) \
+	GL_FUNC(PrimitiveBoundingBox, void, (float minX, float minY, float minZ, float minW, float maxX, float maxY, float maxZ, float maxW)) \
+	GL_FUNC(GetGraphicsResetStatus, GLenum, ()) \
+	GL_FUNC(ReadnPixels, void, (int32_t x, int32_t y, int32_t width, int32_t height, GLenum format, GLenum type, int32_t bufSize, void* data)) \
+	GL_FUNC(GetnUniformfv, void, (uint32_t program, int32_t location, int32_t bufSize, float* params)) \
+	GL_FUNC(GetnUniformiv, void, (uint32_t program, int32_t location, int32_t bufSize, int32_t* params)) \
+	GL_FUNC(GetnUniformuiv, void, (uint32_t program, int32_t location, int32_t bufSize, uint32_t* params)) \
+	GL_FUNC(MinSampleShading, void, (float value)) \
+	GL_FUNC(PatchParameteri, void, (GLenum pname, int32_t value)) \
 	GL_FUNC(TexParameterIiv, void, (GLenum target, GLenum pname, const int32_t* params)) \
 	GL_FUNC(TexParameterIuiv, void, (GLenum target, GLenum pname, const uint32_t* params)) \
 	GL_FUNC(GetTexParameterIiv, void, (GLenum target, GLenum pname, int32_t* params)) \
@@ -1490,14 +1485,12 @@ struct GlesExtE
 	GL_FUNC(SamplerParameterIiv, void, (uint32_t sampler, GLenum pname, const int32_t* param)) \
 	GL_FUNC(SamplerParameterIuiv, void, (uint32_t sampler, GLenum pname, const uint32_t* param)) \
 	GL_FUNC(GetSamplerParameterIiv, void, (uint32_t sampler, GLenum pname, int32_t* params)) \
-	GL_FUNC(GetSamplerParameterIuiv, void, (uint32_t sampler, GLenum pname, uint32_t* params))
+	GL_FUNC(GetSamplerParameterIuiv, void, (uint32_t sampler, GLenum pname, uint32_t* params)) \
+	GL_FUNC(TexBuffer, void, (GLenum target, GLenum internalformat, uint32_t buffer)) \
+	GL_FUNC(TexBufferRange, void, (GLenum target, GLenum internalformat, uint32_t buffer, intptr_t offset, intptr_t size)) \
+	GL_FUNC(TexStorage3DMultisample, void, (GLenum target, int32_t samples, GLenum internalformat, int32_t width, int32_t height, int32_t depth, GLboolean fixedsamplelocations))
 
-
-#define GLES32_NEW_FUNCTIONS \
-	GLES32_OR_EXTENSION_FUNCTIONS \
-	GLES32_ONLY_FUNCTIONS
-
-// common OpenGL ES extensions and useful OpenGL core features (texture view, multi draw, etc.)
+// common OpenGL ES extensions and some useful OpenGL core features
 #define GLES_EXT_FUNCTIONS \
 	GL_FUNC(TextureView, void, (uint32_t texture, GLenum target, uint32_t origtexture, GLenum internalformat, uint32_t minlevel, uint32_t numlevels, uint32_t minlayer, uint32_t numlayers)) \
 	GL_FUNC(GetTexImage, void, (GLenum target, int level, GLenum format, GLenum type, void* pixels)) \
@@ -1507,9 +1500,10 @@ struct GlesExtE
 	GL_FUNC(ClearTexSubImage, void, (uint32_t texture, int level, int xoffset, int yoffset, int zoffset, int width, int height, int depth, GLenum format, GLenum type, const void* data)) \
 	GL_FUNC(MapBuffer, void*, (GLenum target, GLenum access)) \
 	GL_FUNC(MultiDrawArraysIndirect, void, (GLenum mode, const void* indirect, int primcount, int stride)) \
-	GL_FUNC(MultiDrawElementsIndirect, void, (GLenum mode, GLenum type, const void* indirect, int primcount, int strides)) \                                                  \
-	GL_FUNC(FramebufferTexture2DMultisampleEXT, void, GLenum target, GLenum attachment, GLenum textarget, uint texture, int level, int samples);
+	GL_FUNC(MultiDrawElementsIndirect, void, (GLenum mode, GLenum type, const void* indirect, int primcount, int strides)) \
+	GL_FUNC(FramebufferTexture2DMultisampleEXT, void, (GLenum target, GLenum attachment, GLenum textarget, uint texture, int level, int samples));
 
+	
 #undef GL_FUNC
 
 extern "C" {
@@ -1621,7 +1615,7 @@ inline void loadDynamic(GlFunc<void()>* functions[], size_t numFunctions, const 
 	glName[1] = 'l';
 	for(int32_t i = 0; i < numFunctions; i++)
 	{
-		for(auto suffix = nullSeparatedSuffices; *suffix != '.'; suffix += strlen(suffix) + 1)
+		for(auto suffix = nullSeparatedSufficesTerminatedWithDot; *suffix != '.'; suffix += strlen(suffix) + 1)
 		{
 			strcpy(glName + 2, nullSeparatedNames);
 			functions[i] = getProcAddress(glName);
@@ -1636,7 +1630,7 @@ T loadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
 	static_assert(alignof(T) == alignof(GlFunc<void()>*) && sizeof(T) % sizeof(GlFunc<void()>*) == 0);
 	constexpr size_t numFunctions = sizeof(T)/sizeof(GlFunc<void()>*);
 	GlFunc<void()>* functions[numFunctions];
-	loadDynamic(functions, numFunctions, T::AllFunctionNames, getProcAddress);
+	loadDynamic(functions, numFunctions, T::AllFunctionNames, "\0.", getProcAddress);
 	T result;
 	memcpy(&result, functions, sizeof(result));
 	return result;
@@ -1779,16 +1773,16 @@ struct GlesExt: z_D::GlesExtE, Gles32, z_D::GlesExtF
 		Gles32(gles32), z_D::GlesExtF(glesExt) {}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles2 LoadDynamic(Loader getProcAddress)
+	static GlesExt LoadDynamic(Loader getProcAddress)
 	{
-		return Gles32(
+		return GlesExt(
 			Gles32::LoadDynamic(getProcAddress),
 			z_D::loadDynamic<z_D::GlesExtF>(getProcAddress)
 		);
 	}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles32 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static GlesExt Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
 	{
 		return LoadDynamic(getProcAddress);
 	}
