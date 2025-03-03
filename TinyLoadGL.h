@@ -1682,12 +1682,13 @@ inline void loadDynamic(GlFunc<void()>* functions[], size_t numFunctions, const 
 }
 
 template<typename T, typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-T loadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+T loadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 {
 	static_assert(alignof(T) == alignof(GlFunc<void()>*) && sizeof(T) % sizeof(GlFunc<void()>*) == 0);
 	constexpr size_t numFunctions = sizeof(T)/sizeof(GlFunc<void()>*);
 	GlFunc<void()>* functions[numFunctions];
-	loadDynamic(functions, numFunctions, T::AllFunctionNames, "\0.", getProcAddress);
+	const auto suffices = tryExtensions? "\0ARB\0OES\0EXT\0NV\0APPLE\0KHR\0.": "\0.";
+	loadDynamic(functions, numFunctions, T::AllFunctionNames, suffices, getProcAddress);
 	T result;
 	memcpy(&result, functions, sizeof(result));
 	return result;
@@ -1725,8 +1726,6 @@ struct Gles2: z_D::Gl11E, z_D::Gles2E, z_D::Gl11F, z_D::Gles2F
 };
 #if TINY_LOAD_GL_STATIC_GLES >= 20
 constexpr Gles2 Gles2Static(z_D::Gl11FStatic, z_D::Gles2FStatic);
-
-#ifdef TINY_LOAD_GL_STATIC_GLES2
 template<typename Loader>
 constexpr Gles2 Gles2::Load(Loader getProcAddress) {return Gles2Static;}
 #endif
@@ -1738,11 +1737,11 @@ struct Gles3: z_D::Gles3E, Gles2, z_D::Gles3F
 		Gles2(gles2), Gles3F(gles3) {}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles3 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles3 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
 		return Gles3(
 			Gles2::LoadDynamic(getProcAddress),
-			z_D::loadDynamic<z_D::Gles3F>(getProcAddress)
+			z_D::loadDynamic<z_D::Gles3F>(getProcAddress, tryExtensions)
 		);
 	}
 
@@ -1750,9 +1749,9 @@ struct Gles3: z_D::Gles3E, Gles2, z_D::Gles3F
 #if TINY_LOAD_GL_STATIC_GLES >= 30
 	static constexpr Gles3 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress);
 #else
-	static Gles3 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles3 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
-		return LoadDynamic(getProcAddress);
+		return LoadDynamic(getProcAddress, tryExtensions);
 	}
 #endif
 };
@@ -1769,11 +1768,11 @@ struct Gles31: z_D::Gles31E, Gles3, z_D::Gles31F
 		Gles3(gles3), z_D::Gles31F(gles31) {}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles31 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles31 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
 		return Gles31(
-			Gles3::LoadDynamic(getProcAddress),
-			z_D::loadDynamic<z_D::Gles31F>(getProcAddress)
+			Gles3::LoadDynamic(getProcAddress, tryExtensions),
+			z_D::loadDynamic<z_D::Gles31F>(getProcAddress, tryExtensions)
 		);
 	}
 
@@ -1782,9 +1781,9 @@ struct Gles31: z_D::Gles31E, Gles3, z_D::Gles31F
 	static constexpr Gles31 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress);
 #else
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles31 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles31 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
-		return LoadDynamic(getProcAddress);
+		return LoadDynamic(getProcAddress, tryExtensions);
 	}
 #endif
 };
@@ -1801,11 +1800,11 @@ struct Gles32: z_D::Gles32E, Gles31, z_D::Gles32F
 		Gles31(gles31), Gles32F(gles32) {}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static Gles32 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles32 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
 		return Gles32(
-			Gles31::LoadDynamic(getProcAddress),
-			z_D::loadDynamic<z_D::Gles32F>(getProcAddress)
+			Gles31::LoadDynamic(getProcAddress, tryExtensions),
+			z_D::loadDynamic<z_D::Gles32F>(getProcAddress, tryExtensions)
 		);
 	}
 
@@ -1813,9 +1812,9 @@ struct Gles32: z_D::Gles32E, Gles31, z_D::Gles32F
 #if TINY_LOAD_GL_STATIC_GLES >= 32
 	constexpr
 #else
-	static Gles32 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static Gles32 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
-		return LoadDynamic(getProcAddress);
+		return LoadDynamic(getProcAddress, tryExtensions);
 	}
 #endif
 };
@@ -1831,18 +1830,18 @@ struct GlesExt: z_D::GlesExtE, Gles32, z_D::GlesExtF
 		Gles32(gles32), z_D::GlesExtF(glesExt) {}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static GlesExt LoadDynamic(Loader getProcAddress)
+	static GlesExt LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
 		return GlesExt(
-			Gles32::LoadDynamic(getProcAddress),
-			z_D::loadDynamic<z_D::GlesExtF>(getProcAddress)
+			Gles32::LoadDynamic(getProcAddress, tryExtensions),
+			z_D::loadDynamic<z_D::GlesExtF>(getProcAddress, tryExtensions)
 		);
 	}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-	static GlesExt Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
+	static GlesExt Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExtensions = false)
 	{
-		return LoadDynamic(getProcAddress);
+		return LoadDynamic(getProcAddress, tryExtensions);
 	}
 };
 
