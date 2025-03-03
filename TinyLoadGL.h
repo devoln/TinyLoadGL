@@ -6,6 +6,9 @@
 typedef struct __GLsync* GLsync;
 typedef unsigned char GLboolean;
 typedef unsigned GLenum;
+#ifdef _WIN32
+struct HINSTANCE__;
+#endif
 
 namespace TinyLoadGL {
 #if defined(_WIN32) && !defined(_WIN64)
@@ -20,7 +23,12 @@ template<typename F> using GlFunc = F;
 
 namespace z_D { extern "C" {
 #ifdef _WIN32
-__declspec(dllimport) GlFunc<intptr_t()>* TINY_LOAD_GL_CALL wglGetProcAddress(const char* name);
+using PROC = GlFunc<intptr_t()>*; // cannot substitute this directly in the line below because of a MinGW bug
+using HMODULE = HINSTANCE__*;
+__declspec(dllimport) PROC TINY_LOAD_GL_CALL wglGetProcAddress(const char* name);
+__declspec(dllimport) HMODULE TINY_LOAD_GL_CALL LoadLibraryW(const wchar_t* name);
+__declspec(dllimport) PROC TINY_LOAD_GL_CALL GetProcAddress(HMODULE hModule, const char* lpProcName);
+
 #elif defined(__ANDROID) || defined(__APPLE__)
 void* dlopen(const char* path, int mode);
 void* dlsym(void* handle, const char* symbol);
@@ -34,7 +42,11 @@ inline GlFunc<void()>* GetProcAddress(const char* name)
 #ifdef _WIN32
 	auto res = reinterpret_cast<GlFunc<void()>*>(z_D::wglGetProcAddress(name));
 	if(reinterpret_cast<intptr_t>(res) >= -1 && reinterpret_cast<intptr_t>(res) <= 3) res = nullptr;
-	// TODO: try GetProcAddress from opengl32.dll?
+	if(!res)
+	{
+		static auto opengl32 = z_D::LoadLibraryW(L"opengl32.dll");
+		res = reinterpret_cast<GlFunc<void()>*>(z_D::GetProcAddress(opengl32, name));
+	}
 	return res;
 #elif defined(__ANDROID__)
 	static const auto libgl = [] {
@@ -1129,6 +1141,19 @@ struct GlesExtE
 		BUFFER_ACCESS = 0x88BB,
 
 		FRAMEBUFFER_ATTACHMENT_TEXTURE_SAMPLES_EXT = 0x8D6C,
+
+		COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0,
+        COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1,
+        COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2,
+        COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3,
+
+		MAP_PERSISTENT_BIT = 0x0040,
+        MAP_COHERENT_BIT = 0x0080,
+        DYNAMIC_STORAGE_BIT = 0x0100,
+        CLIENT_STORAGE_BIT = 0x0200,
+		BUFFER_IMMUTABLE_STORAGE = 0x821F,
+        BUFFER_STORAGE_FLAGS = 0x8220,
+		CLIENT_MAPPED_BUFFER_BARRIER_BIT = 0x4000
 	};
 };
 
@@ -1305,7 +1330,7 @@ struct GlesExtE
 	GL_FUNC(BlitFramebuffer, void, (int32_t srcX0, int32_t srcY0, int32_t srcX1, int32_t srcY1, int32_t dstX0, int32_t dstY0, int32_t dstX1, int32_t dstY1, uint32_t mask, GLenum filter)) \
 	GL_FUNC(RenderbufferStorageMultisample, void, (GLenum target, int32_t samples, GLenum internalformat, int32_t width, int32_t height)) \
 	GL_FUNC(FramebufferTextureLayer, void, (GLenum target, GLenum attachment, uint32_t texture, int32_t level, int32_t layer)) \
-	GL_FUNC(MapBufferRange, void, (GLenum target, intptr_t offset, intptr_t length, uint32_t access)) \
+	GL_FUNC(MapBufferRange, void*, (GLenum target, intptr_t offset, intptr_t length, uint32_t access)) \
 	GL_FUNC(FlushMappedBufferRange, void, (GLenum target, intptr_t offset, intptr_t length)) \
 	GL_FUNC(BindVertexArray, void, (uint32_t array)) \
 	GL_FUNC(DeleteVertexArrays, void, (int32_t n, const uint32_t* arrays)) \
@@ -1502,6 +1527,7 @@ struct GlesExtE
 
 // common OpenGL ES extensions and some useful OpenGL core features
 #define GLES_EXT_FUNCTIONS \
+	GL_FUNC(ClearDepth, void, (double d)) \
 	GL_FUNC(TextureView, void, (uint32_t texture, GLenum target, uint32_t origtexture, GLenum internalformat, uint32_t minlevel, uint32_t numlevels, uint32_t minlayer, uint32_t numlayers)) \
 	GL_FUNC(GetTexImage, void, (GLenum target, int level, GLenum format, GLenum type, void* pixels)) \
 	GL_FUNC(GetTextureSubImage, void, (uint32_t texture, int level, int xoffset, int yoffset, int zoffset, int width, int height, int depth, GLenum format, GLenum type, int bufSize, void* pixels)) \
@@ -1511,9 +1537,9 @@ struct GlesExtE
 	GL_FUNC(MapBuffer, void*, (GLenum target, GLenum access)) \
 	GL_FUNC(MultiDrawArraysIndirect, void, (GLenum mode, const void* indirect, int primcount, int stride)) \
 	GL_FUNC(MultiDrawElementsIndirect, void, (GLenum mode, GLenum type, const void* indirect, int primcount, int strides)) \
-	GL_FUNC(FramebufferTexture2DMultisampleEXT, void, (GLenum target, GLenum attachment, GLenum textarget, uint texture, int level, int samples));
+	GL_FUNC(FramebufferTexture2DMultisampleEXT, void, (GLenum target, GLenum attachment, GLenum textarget, uint32_t texture, int level, int samples)) \
+	GL_FUNC(BufferStorage, void, (GLenum target, size_t size, const void* data, uint32_t flags));
 
-	
 #undef GL_FUNC
 
 extern "C" {
@@ -1620,10 +1646,10 @@ struct GlesExtF
 inline void loadDynamic(GlFunc<void()>* functions[], size_t numFunctions, const char* nullSeparatedNames,
 	const char* nullSeparatedSufficesTerminatedWithDot, GlFunc<void()>*(*getProcAddress)(const char* name))
 {
-	char glName[100];
+	char glName[100]{};
 	glName[0] = 'g';
 	glName[1] = 'l';
-	for(int32_t i = 0; i < numFunctions; i++)
+	for(size_t i = 0; i < numFunctions; i++)
 	{
 		for(auto suffix = nullSeparatedSufficesTerminatedWithDot; *suffix != '.'; suffix += strlen(suffix) + 1)
 		{
