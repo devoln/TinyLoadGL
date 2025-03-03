@@ -64,7 +64,10 @@ namespace z_D {
 
 struct Gl11E
 {
-	static constexpr GLenum (NO_ERROR) = 0;
+	#pragma push_macro("NO_ERROR")
+	#undef NO_ERROR
+	static constexpr GLenum NO_ERROR = 0;
+	#pragma pop_macro("NO_ERROR")
 
 	enum: GLenum {
 		DEPTH_BUFFER_BIT = 0x00000100,
@@ -380,7 +383,10 @@ struct Gles2E
 
 struct Gles3E
 {
-	static constexpr GLenum (WAIT_FAILED) = 0x911D;
+	#pragma push_macro("WAIT_FAILED")
+	#undef WAIT_FAILED
+	static constexpr GLenum WAIT_FAILED = 0x911D;
+	#pragma pop_macro("WAIT_FAILED")
 
 	enum: GLenum {
 		READ_BUFFER = 0x0C02,
@@ -884,7 +890,11 @@ struct Gles31E
 
 struct Gles32E
 {
-	static constexpr GLenum (DIFFERENCE) = 0x929E;
+	#pragma push_macro("DIFFERENCE")
+	#undef DIFFERENCE
+	static constexpr GLenum DIFFERENCE = 0x929E;
+	#pragma pop_macro("DIFFERENCE")
+
 	enum: GLenum {
 		MULTISAMPLE_LINE_WIDTH_RANGE = 0x9381,
 		MULTISAMPLE_LINE_WIDTH_GRANULARITY,
