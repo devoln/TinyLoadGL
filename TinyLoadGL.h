@@ -1,5 +1,13 @@
 #pragma once
 
+#ifndef TINY_LOAD_GL_STATIC_GLES
+#ifdef _WIN32
+#define TINY_LOAD_GL_STATIC_GLES 11
+#else
+#define TINY_LOAD_GL_STATIC_GLES 0
+#endif
+#endif
+
 #include <cstdint>
 #include <cstring>
 
@@ -1562,6 +1570,8 @@ struct Gl11F
 		GL11_GLES2_COMMON_FUNCTIONS;
 #undef GL_FUNC
 };
+
+#if TINY_LOAD_GL_STATIC_GLES >= 11
 constexpr Gl11F Gl11FStatic = {
 #define GL_FUNC GL_FUNC_STATIC_LINK
 	GL11_GLES2_COMMON_FUNCTIONS
@@ -1578,11 +1588,14 @@ struct Gles2F
 		GLES2_NEW_FUNCTIONS;
 #undef GL_FUNC
 };
+
+#if TINY_LOAD_GL_STATIC_GLES >= 20
 constexpr Gles2F Gles2FStatic = {
 #define GL_FUNC GL_FUNC_STATIC_LINK
 	GLES2_NEW_FUNCTIONS
 #undef GL_FUNC
 };
+#endif
 
 struct Gles3F
 {
@@ -1594,11 +1607,14 @@ struct Gles3F
 		GLES3_NEW_FUNCTIONS;
 #undef GL_FUNC
 };
+
+#if TINY_LOAD_GL_STATIC_GLES >= 30
 constexpr Gles3F Gles3NewFunctionsStatic = {
 #define GL_FUNC GL_FUNC_STATIC_LINK
 	GLES3_NEW_FUNCTIONS
 #undef GL_FUNC
 };
+#endif
 
 struct Gles31F
 {
@@ -1610,11 +1626,14 @@ struct Gles31F
 		GLES31_NEW_FUNCTIONS;
 #undef GL_FUNC
 };
+
+#if TINY_LOAD_GL_STATIC_GLES >= 31
 constexpr Gles31F Gles31NewFunctionsStatic = {
 #define GL_FUNC GL_FUNC_STATIC_LINK
 	GLES31_NEW_FUNCTIONS
 #undef GL_FUNC
 };
+#endif
 
 struct Gles32F
 {
@@ -1626,11 +1645,13 @@ struct Gles32F
 		GLES32_NEW_FUNCTIONS;
 #undef GL_FUNC
 };
+#if TINY_LOAD_GL_STATIC_GLES >= 32
 constexpr Gles32F Gles32NewFunctionsStatic = {
 #define GL_FUNC GL_FUNC_STATIC_LINK
 	GLES32_NEW_FUNCTIONS
 #undef GL_FUNC
 };
+#endif
 
 struct GlesExtF
 {
@@ -1683,7 +1704,7 @@ struct Gles2: z_D::Gl11E, z_D::Gles2E, z_D::Gl11F, z_D::Gles2F
 	static Gles2 LoadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
 	{
 		return Gles2(
-		#ifdef _WIN32
+		#if defined(_WIN32) && TINY_LOAD_GL_STATIC_GLES >= 11
 			z_D::Gl11FStatic,
 		#else
 			z_D::loadDynamic<z_D::Gl11F>(getProcAddress),
@@ -1693,7 +1714,7 @@ struct Gles2: z_D::Gl11E, z_D::Gles2E, z_D::Gl11F, z_D::Gles2F
 	}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-#ifdef TINY_LOAD_GL_STATIC_GLES2
+#if TINY_LOAD_GL_STATIC_GLES >= 20
 	static constexpr Gles2 Load(Loader getProcAddress);
 #else
 	static Gles2 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
@@ -1702,6 +1723,7 @@ struct Gles2: z_D::Gl11E, z_D::Gles2E, z_D::Gl11F, z_D::Gles2F
 	}
 #endif
 };
+#if TINY_LOAD_GL_STATIC_GLES >= 20
 constexpr Gles2 Gles2Static(z_D::Gl11FStatic, z_D::Gles2FStatic);
 
 #ifdef TINY_LOAD_GL_STATIC_GLES2
@@ -1725,7 +1747,7 @@ struct Gles3: z_D::Gles3E, Gles2, z_D::Gles3F
 	}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-#ifdef TINY_LOAD_GL_STATIC_GLES3
+#if TINY_LOAD_GL_STATIC_GLES >= 30
 	static constexpr Gles3 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress);
 #else
 	static Gles3 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
@@ -1734,9 +1756,9 @@ struct Gles3: z_D::Gles3E, Gles2, z_D::Gles3F
 	}
 #endif
 };
-constexpr Gles3 Gles3Static(Gles2Static, z_D::Gles3NewFunctionsStatic);
 
-#ifdef TINY_LOAD_GL_STATIC_GLES3
+#if TINY_LOAD_GL_STATIC_GLES >= 30
+constexpr Gles3 Gles3Static(Gles2Static, z_D::Gles3NewFunctionsStatic);
 template<typename Loader> constexpr Gles3 Gles3::Load(Loader getProcAddress) {return Gles3Static;}
 #endif
 
@@ -1755,7 +1777,7 @@ struct Gles31: z_D::Gles31E, Gles3, z_D::Gles31F
 		);
 	}
 
-#ifdef TINY_LOAD_GL_STATIC_GLES31
+#if TINY_LOAD_GL_STATIC_GLES >= 31
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
 	static constexpr Gles31 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress);
 #else
@@ -1766,9 +1788,9 @@ struct Gles31: z_D::Gles31E, Gles3, z_D::Gles31F
 	}
 #endif
 };
-constexpr Gles31 Gles31Static(Gles3Static, z_D::Gles31NewFunctionsStatic);
 
-#ifdef TINY_LOAD_GL_STATIC_GLES31
+#if TINY_LOAD_GL_STATIC_GLES >= 31
+constexpr Gles31 Gles31Static(Gles3Static, z_D::Gles31NewFunctionsStatic);
 template<typename Loader> constexpr Gles31 Gles31::Load(Loader getProcAddress) {return Gles31Static;}
 #endif
 
@@ -1788,8 +1810,8 @@ struct Gles32: z_D::Gles32E, Gles31, z_D::Gles32F
 	}
 
 	template<typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
-#ifdef TINY_LOAD_GL_STATIC_GLES32
-	static constexpr Gles32 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress);
+#if TINY_LOAD_GL_STATIC_GLES >= 32
+	constexpr
 #else
 	static Gles32 Load(Loader getProcAddress = &TinyLoadGL::GetProcAddress)
 	{
@@ -1797,9 +1819,9 @@ struct Gles32: z_D::Gles32E, Gles31, z_D::Gles32F
 	}
 #endif
 };
-constexpr Gles32 Gles32Static(Gles31Static, z_D::Gles32NewFunctionsStatic);
 
-#ifdef TINY_LOAD_GL_STATIC_GLES32
+#if TINY_LOAD_GL_STATIC_GLES >= 32
+constexpr Gles32 Gles32Static(Gles31Static, z_D::Gles32NewFunctionsStatic);
 template<typename Loader> constexpr Gles32 Gles32::Load(Loader getProcAddress) {return Gles32Static;}
 #endif
 
