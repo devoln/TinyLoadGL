@@ -14,6 +14,8 @@
 typedef struct __GLsync* GLsync;
 typedef unsigned char GLboolean;
 typedef unsigned GLenum;
+typedef unsigned EGLenum;
+typedef unsigned EGLboolean;
 #ifdef _WIN32
 struct HINSTANCE__;
 #endif
@@ -81,6 +83,213 @@ namespace z_D {
 #define GL_FUNC_PROTOTYPE(name, ret, args) ret (TINY_LOAD_GL_CALL gl ## name)args;
 
 #define GL_FUNC GL_FUNC_FIELD
+
+struct EglE
+{
+	enum: GLenum {
+		// 1.0:
+		PBUFFER_BIT = 1,
+		PIXMAP_BIT = 2,
+		WINDOW_BIT = 4,
+
+		SUCCESS = 0x3000,
+		NOT_INITIALIZED,
+		BAD_ACCESS,
+		BAD_ALLOC,
+		BAD_ATTRIBUTE,
+		BAD_CONFIG,
+		BAD_CONTEXT,
+		BAD_CURRENT_SURFACE,
+		BAD_DISPLAY,
+		BAD_MATCH,
+		BAD_NATIVE_PIXMAP,
+		BAD_NATIVE_WINDOW,
+		BAD_PARAMETER,
+		BAD_SURFACE,
+
+		BUFFER_SIZE = 0x3020,
+		ALPHA_SIZE,
+		BLUE_SIZE,
+		GREEN_SIZE,
+		RED_SIZE,
+		DEPTH_SIZE,
+		STENCIL_SIZE,
+		CONFIG_CAVEAT,
+		CONFIG_ID,
+		LEVEL,
+		MAX_PBUFFER_HEIGHT,
+		MAX_PBUFFER_PIXELS,
+		MAX_PBUFFER_WIDTH,
+		NATIVE_RENDERABLE,
+		NATIVE_VISUAL_ID,
+		NATIVE_VISUAL_TYPE,
+
+		SAMPLES = 0x3031,
+		SAMPLE_BUFFERS,
+		SURFACE_TYPE,
+		TRANSPARENT_TYPE,
+		TRANSPARENT_BLUE_VALUE,
+		TRANSPARENT_GREEN_VALUE,
+		TRANSPARENT_RED_VALUE,
+		NONE,
+
+		SLOW_CONFIG = 0x3050,
+		NON_CONFORMANT_CONFIG,
+		TRANSPARENT_RGB,
+		VENDOR,
+		VERSION,
+		EXTENSIONS,
+		HEIGHT,
+		WIDTH,
+		LARGEST_PBUFFER,
+		DRAW,
+		READ,
+		CORE_NATIVE_ENGINE,
+
+		// 1.1:
+		CONTEXT_LOST = 0x300E,
+
+		BIND_TO_TEXTURE_RGB = 0x3039,
+		BIND_TO_TEXTURE_RGBA,
+		MIN_SWAP_INTERVAL,
+		MAX_SWAP_INTERVAL,
+
+		NO_TEXTURE = 0x305C,
+		TEXTURE_RGB,
+		TEXTURE_RGBA,
+		TEXTURE_2D,
+
+		TEXTURE_FORMAT = 0x3080,
+		TEXTURE_TARGET,
+		MIPMAP_TEXTURE,
+		MIPMAP_LEVEL,
+		BACK_BUFFER,
+
+		// 1.2:
+		LUMINANCE_SIZE = 0x303D,
+		ALPHA_MASK_SIZE,
+		COLOR_BUFFER_TYPE,
+		RENDERABLE_TYPE,
+
+		SINGLE_BUFFER = 0x3085,
+		RENDER_BUFFER,
+		COLORSPACE,
+		ALPHA_FORMAT,
+		COLORSPACE_sRGB,
+		COLORSPACE_LINEAR,
+		ALPHA_FORMAT_NONPRE,
+		ALPHA_FORMAT_PRE,
+		CLIENT_APIS,
+		RGB_BUFFER,
+		LUMINANCE_BUFFER,
+		HORIZONTAL_RESOLUTION,
+		VERTICAL_RESOLUTION,
+		PIXEL_ASPECT_RATIO,
+		SWAP_BEHAVIOR,
+		BUFFER_PRESERVED,
+		BUFFER_DESTROYED,
+		OPENVG_IMAGE,
+		CONTEXT_CLIENT_TYPE,
+
+		OPENGL_ES_API = 0x30A0,
+		OPENVG_API,
+
+		DISPLAY_SCALING = 10000,
+		OPENGL_ES_BIT = 1,
+		OPENVG_BIT = 2,
+
+		// 1.3:
+		OPENGL_ES2_BIT = 4,
+
+		VG_COLORSPACE_LINEAR_BIT = 0x0020,
+		VG_ALPHA_FORMAT_PRE_BIT = 0x0040,
+
+		MATCH_NATIVE_PIXMAP = 0x3041,
+		CONFORMANT,
+		VG_COLORSPACE = 0x3087,
+		VG_ALPHA_FORMAT,
+		VG_COLORSPACE_sRGB,
+		VG_COLORSPACE_LINEAR,
+		VG_ALPHA_FORMAT_NONPRE,
+		VG_ALPHA_FORMAT_PRE,
+
+		CONTEXT_CLIENT_VERSION = 0x3098,
+
+		// 1.4:
+		MULTISAMPLE_RESOLVE_BOX_BIT = 0x0200,
+		OPENGL_BIT = 0x0008,
+		SWAP_BEHAVIOR_PRESERVED_BIT = 0x0400,
+
+		MULTISAMPLE_RESOLVE = 0x3099,
+		MULTISAMPLE_RESOLVE_DEFAULT,
+		MULTISAMPLE_RESOLVE_BOX,
+		OPENGL_API = 0x30A2,
+
+		// 1.5:
+		CONTEXT_OPENGL_CORE_PROFILE_BIT = 1,
+		CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT = 2,
+		OPENGL_ES3_BIT = 0x0040,
+		SYNC_FLUSH_COMMANDS_BIT = 1,
+
+		CONTEXT_MAJOR_VERSION = 0x3098,
+		CONTEXT_MINOR_VERSION = 0x30FB,
+		CONTEXT_OPENGL_PROFILE_MASK = 0x30FD,
+
+		CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY = 0x31BD, 
+		NO_RESET_NOTIFICATION,
+		LOSE_CONTEXT_ON_RESET,
+
+
+		CONTEXT_OPENGL_DEBUG = 0x31B0,
+		CONTEXT_OPENGL_FORWARD_COMPATIBLE,
+		CONTEXT_OPENGL_ROBUST_ACCESS,
+
+		GL_COLORSPACE_SRGB = 0x3089,
+		GL_COLORSPACE_LINEAR,
+		GL_COLORSPACE = 0x309D,
+		
+		CL_EVENT_HANDLE = 0x309C,
+		SYNC_PRIOR_COMMANDS_COMPLETE = 0x30F0,
+		TIMEOUT_EXPIRED = 0x30F5,
+		CONDITION_SATISFIED,
+		SYNC_TYPE,
+		SYNC_CONDITION,
+		SYNC_FENCE,
+		SYNC_CL_EVENT = 0x30FE,
+		SYNC_CL_EVENT_COMPLETE,
+		SYNC_STATUS,
+		SIGNALED,
+		UNSIGNALED,
+
+		GLTEXTURE_2D = 0x30B1,
+		GLTEXTURE_3D,
+		GLTEXTURE_CUBE_MAP_POSITIVE_X,
+		GLTEXTURE_CUBE_MAP_NEGATIVE_X,
+		GLTEXTURE_CUBE_MAP_POSITIVE_Y,
+		GLTEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GLTEXTURE_CUBE_MAP_POSITIVE_Z,
+		GLTEXTURE_CUBE_MAP_NEGATIVE_Z,
+		RENDERBUFFER,
+		TEXTURE_LEVEL = 0x30BC,
+		TEXTURE_ZOFFSET,
+		IMAGE_PRESERVED = 0x30D2
+	};
+	
+	// 1.0:
+	static constexpr void* NO_CONTEXT = nullptr;
+	static constexpr void* NO_DISPLAY = nullptr;
+	static constexpr void* NO_SURFACE = nullptr;
+	static constexpr int DONT_CARE = -1;
+	
+	// 1.2:
+	static constexpr int UNKNOWN = -1;
+	
+	// 1.4:
+	static constexpr void* DEFAULT_DISPLAY = nullptr;
+	static constexpr void* NO_IMAGE = nullptr;
+	static constexpr uint64_t FOREVER = 0xFFFFFFFFFFFFFFFFull;
+	static constexpr void* NO_SYNC = nullptr;
+};
 
 struct Gl11E
 {
@@ -1165,6 +1374,70 @@ struct GlesExtE
 	};
 };
 
+#ifdef __EMSCRIPTEN__
+using EGLNativeType = int;
+#else
+using EGLNativeType = void*; // NOTE: may be different on some platforms but still a pointer for most of them
+#endif
+using EGLNativeDisplayType = EGLNativeType;
+using EGLNativeWindowType = EGLNativeType;
+using EGLNativePixmapType = EGLNativeType;
+
+#define EGL10_FUNCTIONS \
+	GL_FUNC(ChooseConfig, EGLboolean, (void* dpy, const int* attribList, void** configs, int configSize, int* numConfig)) \
+	GL_FUNC(CopyBuffers, EGLboolean, (void* dpy, void* surface, EGLNativePixmapType target)) \
+	GL_FUNC(CreateContext, void*, (void* dpy, void* config, void* shareContext, const int* attribList)) \
+	GL_FUNC(CreatePbufferSurface, void*, (void* dpy, void* config, const int* attribList)) \
+	GL_FUNC(CreatePixmapSurface, void*, (void* dpy, void* config, EGLNativePixmapType pixmap, const int* attribList)) \
+	GL_FUNC(CreateWindowSurface, void*, (void* dpy, void* config, EGLNativeWindowType win, const int* attribList)) \
+	GL_FUNC(DestroyContext, EGLboolean, (void* dpy, void* ctx)) \
+	GL_FUNC(DestroySurface, EGLboolean, (void* dpy, void* surface)) \
+	GL_FUNC(GetConfigAttrib, EGLboolean, (void* dpy, void* config, int attribute, int* value)) \
+	GL_FUNC(GetConfigs, EGLboolean, (void* dpy, void** configs, int configSize, int* numConfig)) \
+	GL_FUNC(GetCurrentDisplay, void*, ()) \
+	GL_FUNC(GetCurrentSurface, void*, (int readdraw)) \
+	GL_FUNC(GetDisplay, void*, (EGLNativeDisplayType display_id)) \
+	GL_FUNC(GetError, int, ()) \
+	GL_FUNC(GetProcAddress, GlFunc<void()>*, (const char* procname)) \
+	GL_FUNC(Initialize, EGLboolean, (void* dpy, int* major, int* minor)) \
+	GL_FUNC(MakeCurrent, EGLboolean, (void* dpy, void* draw, void* read, void* ctx)) \
+	GL_FUNC(QueryContext, EGLboolean, (void* dpy, void* ctx, int attribute, int* value)) \
+	GL_FUNC(QueryString, const char*, (void* dpy, int name)) \
+	GL_FUNC(QuerySurface, EGLboolean, (void* dpy, void* surface, int attribute, int* value)) \
+	GL_FUNC(SwapBuffers, EGLboolean, (void* dpy, void* surface)) \
+	GL_FUNC(Terminate, EGLboolean, (void* dpy)) \
+	GL_FUNC(WaitGL, EGLboolean,  ()) \
+	GL_FUNC(WaitNative, EGLboolean, (int engine))
+
+#define EGL11_FUNCTIONS \
+	GL_FUNC(BindTexImage, EGLboolean, (void* dpy, void* surface, int buffer)) \
+	GL_FUNC(ReleaseTexImage, EGLboolean, (void* dpy, void* surface, int buffer)) \
+	GL_FUNC(SurfaceAttrib, EGLboolean, (void* dpy, void* surface, int attribute, int value)) \
+	GL_FUNC(SwapInterval, EGLboolean, (void* dpy, int interval)) \
+
+#define EGL12_FUNCTIONS \
+	GL_FUNC(BindAPI, EGLboolean, (EGLenum api)) \
+	GL_FUNC(QueryAPI, EGLenum, ()) \
+	GL_FUNC(CreatePbufferFromClientBuffer, void*, (void* dpy, EGLenum buftype, void* buffer, void* config, const int* attribList)) \
+	GL_FUNC(ReleaseThread, EGLboolean, ()) \
+	GL_FUNC(WaitClient, EGLboolean, ())
+
+#define EGL14_FUNCTIONS \
+	GL_FUNC(GetCurrentContext, void*, ())
+
+#define EGL15_FUNCTIONS \
+	GL_FUNC(CreateSync, void*, (void* dpy, EGLenum type, const intptr_t* attribList)) \
+	GL_FUNC(DestroySync, EGLboolean, (void* dpy, void* sync)) \
+	GL_FUNC(ClientWaitSync, int, (void* dpy, void* sync, int flags, uint64_t timeout)) \
+	GL_FUNC(GetSyncAttrib, EGLboolean, (void* dpy, void* sync, int attribute, intptr_t* value)) \
+	GL_FUNC(CreateImage, void*, (void* dpy, void* ctx, EGLenum target, void* buffer, const intptr_t* attribList)) \
+	GL_FUNC(DestroyImage, EGLboolean, (void* dpy, void* image)) \
+	GL_FUNC(GetPlatformDisplay, void*, (EGLenum platform, void* nativeDisplay, const intptr_t* attribList)) \
+	GL_FUNC(CreatePlatformWindowSurface, void*, (void* dpy, void* config, void* nativeWindow, const intptr_t* attribList)) \
+	GL_FUNC(CreatePlatformPixmapSurface, void*, (void* dpy, void* config, void* nativePixmap, const intptr_t* attribList)) \
+	GL_FUNC(WaitSync, EGLboolean, (void* dpy, void* sync, int flags))
+
+
 #define GL11_GLES2_COMMON_FUNCTIONS \
 	GL_FUNC(BindTexture, void, (GLenum target, uint32_t texture)) \
 	GL_FUNC(BlendFunc, void, (GLenum sfactor, GLenum dfactor)) \
@@ -1577,6 +1850,22 @@ constexpr Gl11F Gl11FStatic = {
 	GL11_GLES2_COMMON_FUNCTIONS
 #undef GL_FUNC
 };
+#endif
+
+struct EglF
+{
+#define GL_FUNC GL_FUNC_FIELD
+	EGL10_FUNCTIONS
+	EGL11_FUNCTIONS
+	EGL12_FUNCTIONS
+	EGL14_FUNCTIONS
+	EGL15_FUNCTIONS
+#undef GL_FUNC
+	static constexpr const char* AllFunctionNames =
+#define GL_FUNC GL_FUNC_ZTERM_NAME
+	EGL10_FUNCTIONS;
+#undef GL_FUNC
+};
 
 struct Gles2F
 {
@@ -1664,21 +1953,39 @@ struct GlesExtF
 #undef GL_FUNC
 };
 
+inline void loadDynamicGeneric(char* glName, char* glNameAfterPrefix, GlFunc<void()>* functions[], size_t numFunctions, const char* nullSeparatedNames,
+	const char* nullSeparatedSufficesTerminatedWithDot, GlFunc<void()>*(*getProcAddress)(const char* name))
+{
+	for(size_t i = 0; i < numFunctions; i++)
+	{
+		for(auto suffix = nullSeparatedSufficesTerminatedWithDot; *suffix != '.'; suffix += strlen(suffix) + 1)
+		{
+			strcpy(glNameAfterPrefix, nullSeparatedNames);
+			functions[i] = getProcAddress(glName);
+			nullSeparatedNames += strlen(nullSeparatedNames) + 1;
+		}
+	}
+}
+
 inline void loadDynamic(GlFunc<void()>* functions[], size_t numFunctions, const char* nullSeparatedNames,
 	const char* nullSeparatedSufficesTerminatedWithDot, GlFunc<void()>*(*getProcAddress)(const char* name))
 {
 	char glName[100]{};
 	glName[0] = 'g';
 	glName[1] = 'l';
-	for(size_t i = 0; i < numFunctions; i++)
-	{
-		for(auto suffix = nullSeparatedSufficesTerminatedWithDot; *suffix != '.'; suffix += strlen(suffix) + 1)
-		{
-			strcpy(glName + 2, nullSeparatedNames);
-			functions[i] = getProcAddress(glName);
-			nullSeparatedNames += strlen(nullSeparatedNames) + 1;
-		}
-	}
+	loadDynamicGeneric(glName, glName + 2, functions,
+		numFunctions, nullSeparatedNames, nullSeparatedSufficesTerminatedWithDot, getProcAddress);
+}
+
+inline void loadDynamicEGL(GlFunc<void()>* functions[], size_t numFunctions, const char* nullSeparatedNames,
+	const char* nullSeparatedSufficesTerminatedWithDot, GlFunc<void()>*(*getProcAddress)(const char* name))
+{
+	char glName[100]{};
+	glName[0] = 'e';
+	glName[1] = 'g';
+	glName[2] = 'l';
+	loadDynamicGeneric(glName, glName + 3, functions,
+		numFunctions, nullSeparatedNames, nullSeparatedSufficesTerminatedWithDot, getProcAddress);
 }
 
 template<typename T, typename Loader = decltype(&TinyLoadGL::GetProcAddress)>
@@ -1693,7 +2000,35 @@ T loadDynamic(Loader getProcAddress = &TinyLoadGL::GetProcAddress, bool tryExten
 	memcpy(&result, functions, sizeof(result));
 	return result;
 }
+
+template<typename T, typename Loader>
+T loadDynamicEGL(Loader getProcAddress)
+{
+	static_assert(alignof(T) == alignof(GlFunc<void()>*) && sizeof(T) % sizeof(GlFunc<void()>*) == 0);
+	constexpr size_t numFunctions = sizeof(T)/sizeof(GlFunc<void()>*);
+	GlFunc<void()>* functions[numFunctions];
+	loadDynamicEGL(functions, numFunctions, T::AllFunctionNames, "\0.", getProcAddress);
+	T result;
+	memcpy(&result, functions, sizeof(result));
+	return result;
 }
+}
+
+struct Egl: z_D::EglE, z_D::EglF
+{
+	Egl() = default;
+	constexpr Egl(const z_D::EglF& egl): z_D::EglF(egl) {}
+
+	template<typename Loader> static Egl LoadDynamic(Loader getProcAddress)
+	{
+		return Egl(z_D::loadDynamicEGL<z_D::EglF>(getProcAddress));
+	}
+
+	template<typename Loader> static Egl Load(Loader getProcAddress)
+	{
+		return LoadDynamic(getProcAddress);
+	}
+};
 
 struct Gles2: z_D::Gl11E, z_D::Gles2E, z_D::Gl11F, z_D::Gles2F
 {
