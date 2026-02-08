@@ -1370,7 +1370,25 @@ struct GlesExtE
         CLIENT_STORAGE_BIT = 0x0200,
 		BUFFER_IMMUTABLE_STORAGE = 0x821F,
         BUFFER_STORAGE_FLAGS = 0x8220,
-		CLIENT_MAPPED_BUFFER_BARRIER_BIT = 0x4000
+		CLIENT_MAPPED_BUFFER_BARRIER_BIT = 0x4000,
+
+		SRC1_COLOR = 0x88F9,
+		SRC1_ALPHA = 0x8589,
+		ONE_MINUS_SRC1_COLOR = 0x88FA,
+		ONE_MINUS_SRC1_ALPHA = 0x88FB,
+		LOCATION_INDEX = 0x930F,
+		MAX_DUAL_SOURCE_DRAW_BUFFERS = 0x88FC,
+
+		FRAGMENT_SHADER_DISCARDS_SAMPLES_EXT = 0x8A52,
+
+		R16 = 0x822A,
+        RG16 = 0x822C,
+		RGB16 = 0x8054,
+        RGBA16 = 0x805B,
+        R16_SNORM = 0x8F98,
+        RG16_SNORM,
+        RGB16_SNORM,
+        RGBA16_SNORM
 	};
 };
 
@@ -1819,7 +1837,13 @@ using EGLNativePixmapType = EGLNativeType;
 	GL_FUNC(MultiDrawArraysIndirect, void, (GLenum mode, const void* indirect, int primcount, int stride)) \
 	GL_FUNC(MultiDrawElementsIndirect, void, (GLenum mode, GLenum type, const void* indirect, int primcount, int strides)) \
 	GL_FUNC(FramebufferTexture2DMultisampleEXT, void, (GLenum target, GLenum attachment, GLenum textarget, uint32_t texture, int level, int samples)) \
-	GL_FUNC(BufferStorage, void, (GLenum target, size_t size, const void* data, uint32_t flags));
+	GL_FUNC(BufferStorage, void, (GLenum target, size_t size, const void* data, uint32_t flags)) \
+	GL_FUNC(BindFragDataLocationIndexed, void, (uint32_t program, uint32_t colorNumber, uint32_t index, const char* name)) \
+	GL_FUNC(GetFragDataIndex, int, (uint32_t program, const char* name)) \
+	GL_FUNC(BindFragDataLocation, void, (uint32_t program, uint32_t colorNumber, const char* name)) \
+	GL_FUNC(GetProgramResourceLocationIndex, int, (uint32_t program, GLenum programInterface, const char* name)) \
+	GL_FUNC(FramebufferFetchBarrierEXT, void, ()) \
+	GL_FUNC(TextureBarrier, void, ());
 
 #undef GL_FUNC
 
